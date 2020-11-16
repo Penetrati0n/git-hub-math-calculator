@@ -87,13 +87,33 @@ namespace FuncAlgObrPolNot
                     stack.Pop();
                     stack.Push("(");
                 }
-                else if (c == '(')
+                else if (isOpenBracket(c))
                 {
                     stack.Push(c.ToString());
                 }
-                else if (c == ')')
+                else if (isCloseBracket(c))
                 {
-                    while (stack.Peek() != "(")
+                    string openBracket;
+                    switch (c)
+                    {
+                        case ')':
+                            openBracket = "(";
+                            break;
+                        case '}':
+                            openBracket = "{";
+                            break;
+                        case ']':
+                            openBracket = "[";
+                            break;
+                        case '>':
+                            openBracket = "<";
+                            break;
+                        default:
+                            openBracket = "";
+                            break;
+                    }
+
+                    while (stack.Peek() != openBracket)
                     {
                         Output.Add(stack.Pop());
                     }
@@ -292,7 +312,7 @@ namespace FuncAlgObrPolNot
 
 Простейшие математические операции
 
-+ - * / ()
++ - * / () {} [] <>
 сложение, вычитание, умножение, деление и группирующие символы
 
 Десятичные дроби записываются через точку:
@@ -370,6 +390,14 @@ pi - Число pi = 3.141592653589793...
         private bool isPrefFunc(string oper)
         {
             return PrefixFunctions.Contains(oper);
+        }
+        private bool isOpenBracket(char bracket)
+        {
+            return bracket == '(' || bracket == '{' || bracket == '[' || bracket == '<';
+        }
+        private bool isCloseBracket(char bracket)
+        {
+            return bracket == ')' || bracket == '}' || bracket == ']' || bracket == '>';
         }
         private double Factorial(double i)
         {

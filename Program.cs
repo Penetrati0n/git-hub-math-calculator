@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MathCalculator;
 
 namespace FuncAlgObrPolNot
 {
@@ -16,7 +15,7 @@ namespace FuncAlgObrPolNot
 
         public static void Example()
         {
-            Calculator calculator = new Calculator();
+            MathCalculator calculator = new MathCalculator();
             Console.WriteLine(calculator.Help(0) + "\n\n\n");                           // Вывод списка функций
 
             string function = "(sin(pi * x) ^ 2 * log(2, x + a)) / (root(x + 15.15, a))";
