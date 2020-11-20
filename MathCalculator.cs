@@ -25,8 +25,51 @@ namespace FuncAlgObrPolNot
         public void ReversePolish(string input)
         {
             Output.Clear();
-            Stack<string> stack = new Stack<string>();
             input = input.Replace(" ", "");
+            
+            // Проверка на правильность ввода скобок
+            {
+                Stack<char> brackets = new Stack<char>();
+                for (int i = 0; i < input.Length; i++)
+                {
+                    if (isOpenBracket(input[i]))
+                    {
+                        brackets.Push(input[i]);
+                    }
+                    else if (isCloseBracket(input[i]))
+                    {
+                        char br;
+                        switch (input[i])
+                        {
+                            case ')':
+                                br = '(';
+                                break;
+                            case '}':
+                                br = '{';
+                                break;
+                            case '>':
+                                br = '<';
+                                break;
+                            case ']':
+                                br = '[';
+                                break;
+                            default:
+                                br = input[i];
+                                break;
+                        }
+                        if (brackets.Count == 0 || br != brackets.Pop())
+                        {
+                            throw new Exception("Ошибка с вводом скобок скобок.");
+                        }
+                    }
+                }
+                if (brackets.Count > 0)
+                {
+                    throw new Exception("Ошибка с вводом скобок скобок.");
+                }
+            }
+
+            Stack<string> stack = new Stack<string>();
 
             char c;
             string temp;
@@ -47,8 +90,21 @@ namespace FuncAlgObrPolNot
                             temp += input[i];
                         }
                     }
-
                     Output.Add(temp);
+
+
+                    // Если после цифры идёт аргумент или функция, то вставляем между ними знак умножения. Пример: 2x = 2 * x
+                    if (i < input.Length && (char.IsLetter(input[i]) || isOpenBracket(input[i])))
+                    {
+                        while (stack.Count > 0 && GetPrioritet(stack.Peek()) >= GetPrioritet("*"))
+                        {
+                            Output.Add(stack.Pop());
+                        }
+                        stack.Push("*");
+                    }
+                    //
+
+
                     i--;
                 }
                 else if (c == '!')
@@ -118,7 +174,7 @@ namespace FuncAlgObrPolNot
                         Output.Add(stack.Pop());
                     }
                     stack.Pop();
-                    if (stack.Count > 0 && !isPrefFunc(stack.Peek()))
+                    if (stack.Count > 0 && !isPrefFunc(stack.Peek()) && !isOpenBracket(stack.Peek()[0]))
                     {
                         Output.Add(stack.Pop());
                     }
@@ -190,14 +246,17 @@ namespace FuncAlgObrPolNot
                             break;
                         case "ctg":
                         case "cot":
+                            if (Math.Tan(stack.Peek()) == 0) throw new Exception("Ошибка в котангенсе.");
                             stack.Push(1.0 / Math.Tan(stack.Pop()));
                             break;
                         case "asin":
                         case "arcsin":
+                            if (stack.Peek() < -1 || stack.Peek() > 1) throw new Exception("Значение аргумента в asin or arcsin не принадлежит [-1; 1].");
                             stack.Push(Math.Asin(stack.Pop()));
                             break;
                         case "acos":
                         case "arccos":
+                            if (stack.Peek() < -1 || stack.Peek() > 1) throw new Exception("Значение аргумента в acos or arccos не принадлежит [-1; 1].");
                             stack.Push(Math.Acos(stack.Pop()));
                             break;
                         case "atg":
@@ -213,21 +272,26 @@ namespace FuncAlgObrPolNot
                             stack.Push(Math.PI / 2 - Math.Atan(stack.Pop()));
                             break;
                         case "sec":
+                            if (Math.Cos(stack.Peek()) == 0) throw new Exception("Проблема в sec().");
                             stack.Push(1 / Math.Cos(stack.Pop()));
                             break;
                         case "csc":
+                            if (Math.Sin(stack.Peek()) == 0) throw new Exception("Проблема в csc().");
                             stack.Push(1 / Math.Sin(stack.Pop()));
                             break;
                         case "asec":
+                            if (stack.Peek() == 0) throw new Exception("Проблема в asec().");
                             stack.Push(Math.Acos(1 / stack.Pop()));
                             break;
                         case "acsc":
+                            if (stack.Peek() == 0) throw new Exception("Проблема в acsc().");
                             stack.Push(Math.Asin(1 / stack.Pop()));
                             break;
                         case "abs":
                             stack.Push(Math.Abs(stack.Pop()));
                             break;
                         case "sqrt":
+                            if (stack.Peek() < 0) throw new Exception("Отрицательное значение под корнем.");
                             stack.Push(Math.Sqrt(stack.Pop()));
                             break;
                         case "cbrt":
@@ -235,15 +299,21 @@ namespace FuncAlgObrPolNot
                             break;
                         case "root":
                             double n = stack.Pop();
+                            if (n == 0 || (n % 2) == 0 && stack.Peek() < 0) throw new Exception("Что-то не так с корнем.");
                             stack.Push(Math.Pow(stack.Pop(), 1 / n));
                             break;
                         case "log":
-                            stack.Push(Math.Log(stack.Pop(), stack.Pop()));
+                            double a = stack.Pop();
+                            double b = stack.Pop();
+                            if (a <= 0 || a == 1 || b <= 0) throw new Exception("Ошибка в log(,).");
+                            stack.Push(Math.Log(a, b));
                             break;
                         case "ln":
+                            if (stack.Peek() <= 0) throw new Exception("Ошибка в ln().");
                             stack.Push(Math.Log(stack.Pop()));
                             break;
                         case "lg":
+                            if (stack.Peek() <= 0) throw new Exception("Ошибка в lg().");
                             stack.Push(Math.Log10(stack.Pop()));
                             break;
                         case "exp":
@@ -257,6 +327,7 @@ namespace FuncAlgObrPolNot
                 }
                 else if (c == "!")
                 {
+                    if (stack.Peek() - Math.Truncate(stack.Peek()) > 0 || stack.Peek() < 0) throw new Exception("Ошибка при вычислении факториала.");
                     stack.Push(Factorial(stack.Pop()));
                 }
                 else
@@ -298,6 +369,157 @@ namespace FuncAlgObrPolNot
 
             return stack.Pop();
         }
+        public double Integral(int a, int b, double E)
+        {
+            if (Output.Count == 0) throw new Exception("Нет формулы.");
+
+            Dictionary<string, string> var = new Dictionary<string, string>() { { "x", "" } };
+            int n = 2 * Convert.ToInt32(Math.Pow(3, 8));
+            double dx = (b - a) / n;
+            double sumN = 0;
+            double sumL;
+            double temp;
+            Dictionary<double, double> valuesFunction = new Dictionary<double, double>();
+
+            do
+            {
+                n *= 3;
+                sumL = sumN;
+                sumN = 0;
+
+                for (double x = a + dx / 2; x < b; x += dx)
+                {
+                    if (valuesFunction.ContainsKey(x))
+                    {
+                        sumN += valuesFunction[x] * dx;
+                    }
+                    else
+                    {
+                        var["x"] = x.ToString();
+                        temp = Computing(var);
+                        sumN += temp * dx;
+                        valuesFunction.Add(x, temp);
+                    }
+                }
+            }
+            while (Math.Abs(sumN - sumL) > E);
+
+            return sumN;
+        }
+        public double Integral(int a, int b, double E, Dictionary<string, string> var)
+        {
+            if (Output.Count == 0) throw new Exception("Нет формулы.");
+
+            if (!var.ContainsKey("x")) var.Add("x", "");
+
+            int n = 2 * Convert.ToInt32(Math.Pow(3, 8));
+            double dx = (b - a) / n;
+            double sumN = 0;
+            double sumL;
+            double temp;
+            Dictionary<double, double> valuesFunction = new Dictionary<double, double>();
+
+            do
+            {
+                n *= 3;
+                sumL = sumN;
+                sumN = 0;
+
+                for (double x = a + dx / 2; x < b; x += dx)
+                {
+                    if (valuesFunction.ContainsKey(x))
+                    {
+                        sumN += valuesFunction[x] * dx;
+                    }
+                    else
+                    {
+                        var["x"] = x.ToString();
+                        temp = Computing(var);
+                        sumN += temp * dx;
+                        valuesFunction.Add(x, temp);
+                    }
+                }
+            }
+            while (Math.Abs(sumN - sumL) > E);
+
+            return sumN;
+        }
+        public double Integral(int a, int b, double E, string function)
+        {
+            ReversePolish(function);
+
+            Dictionary<string, string> var = new Dictionary<string, string>() { { "x", "" } };
+            int n = 2 * Convert.ToInt32(Math.Pow(3, 8));
+            double dx = (b - a) / n;
+            double sumN = 0;
+            double sumL;
+            double temp;
+            Dictionary<double, double> valuesFunction = new Dictionary<double, double>();
+
+            do
+            {
+                n *= 3;
+                sumL = sumN;
+                sumN = 0;
+
+                for (double x = a + dx / 2; x < b; x += dx)
+                {
+                    if (valuesFunction.ContainsKey(x))
+                    {
+                        sumN += valuesFunction[x] * dx;
+                    }
+                    else
+                    {
+                        var["x"] = x.ToString();
+                        temp = Computing(var);
+                        sumN += temp * dx;
+                        valuesFunction.Add(x, temp);
+                    }
+                }
+            }
+            while (Math.Abs(sumN - sumL) > E);
+
+            return sumN;
+        }
+        public double Integral(int a, int b, double E,string function, Dictionary<string, string> var)
+        {
+            ReversePolish(function);
+
+            if (!var.ContainsKey("x")) var.Add("x", "");
+
+            int n = 2 * Convert.ToInt32(Math.Pow(3, 8));
+            double dx = (b - a) / n;
+            double sumN = 0;
+            double sumL;
+            double temp;
+            Dictionary<double, double> valuesFunction = new Dictionary<double, double>();
+
+            do
+            {
+                n *= 3;
+                sumL = sumN;
+                sumN = 0;
+
+                for (double x = a + dx / 2; x < b; x += dx)
+                {
+                    if (valuesFunction.ContainsKey(x))
+                    {
+                        sumN += valuesFunction[x] * dx;
+                    }
+                    else
+                    {
+                        var["x"] = x.ToString();
+                        temp = Computing(var);
+                        sumN += temp * dx;
+                        valuesFunction.Add(x, temp);
+                    }
+                }
+            }
+            while (Math.Abs(sumN - sumL) > E);
+
+            return sumN;
+        }
+
         /// <summary>
         /// Информация о возможностях калькулятора
         /// </summary>
